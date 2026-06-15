@@ -210,6 +210,35 @@ st.markdown(
         color: #5b6b7a;
         margin-bottom: 0.35rem;
     }
+    .ai-section {
+        padding: 1rem;
+        border-radius: 1rem;
+        background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(16, 42, 67, 0.06));
+        border: 1px solid rgba(15, 118, 110, 0.18);
+        box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
+        margin-top: 0.25rem;
+    }
+    .ai-title {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #102a43;
+        margin-bottom: 0.75rem;
+    }
+    .ai-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.22rem 0.6rem;
+        border-radius: 999px;
+        background: rgba(15, 118, 110, 0.12);
+        color: #0f766e;
+        font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
     </style>
     """,
     unsafe_allow_html=True,
@@ -447,28 +476,51 @@ if result:
                     st.session_state["ai_explanation_cache_signature"] = ai_signature
             ai_result = st.session_state.get("ai_explanation_cache_result")
 
-    if ai_result:
-        st.markdown("### AI Explanation Layer")
-        ai_left, ai_right = st.columns(2)
-        with ai_left:
+    st.markdown("<div class='ai-section'>", unsafe_allow_html=True)
+    st.markdown("<div class='ai-title'><span class='ai-pill'>AI</span><span>AI Analysis</span></div>", unsafe_allow_html=True)
+    if ai_explanation_enabled:
+        if ai_result:
+            ai_left, ai_right = st.columns(2)
+            with ai_left:
+                st.markdown(
+                    f"<div class='card'><div class='label'>Plain-English explanation</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('plain_english_explanation', '')}</div></div>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    f"<div class='card' style='margin-top:0.75rem;'><div class='label'>SOC summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('soc_summary', '')}</div></div>",
+                    unsafe_allow_html=True,
+                )
+            with ai_right:
+                st.markdown(
+                    f"<div class='card'><div class='label'>Investor pitch summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('investor_pitch_summary', '')}</div></div>",
+                    unsafe_allow_html=True,
+                )
+                st.markdown(
+                    f"<div class='card' style='margin-top:0.75rem;'><div class='label'>Recommended safe action</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('recommended_safe_action', '')}</div></div>",
+                    unsafe_allow_html=True,
+                )
+            st.caption(ai_result.get("limitation_note", ""))
+        else:
             st.markdown(
-                f"<div class='card'><div class='label'>Plain-English explanation</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('plain_english_explanation', '')}</div></div>",
+                """
+                <div class='card'>
+                    <div class='label'>AI response</div>
+                    <div style='font-size:1.02rem; line-height:1.7;'>AI explanation is enabled, but no external AI response was generated. The app is showing the existing local explanation instead.</div>
+                </div>
+                """,
                 unsafe_allow_html=True,
             )
-            st.markdown(
-                f"<div class='card' style='margin-top:0.75rem;'><div class='label'>SOC summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('soc_summary', '')}</div></div>",
-                unsafe_allow_html=True,
-            )
-        with ai_right:
-            st.markdown(
-                f"<div class='card'><div class='label'>Investor pitch summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('investor_pitch_summary', '')}</div></div>",
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                f"<div class='card' style='margin-top:0.75rem;'><div class='label'>Recommended safe action</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('recommended_safe_action', '')}</div></div>",
-                unsafe_allow_html=True,
-            )
-        st.caption(ai_result.get("limitation_note", ""))
+    else:
+        st.markdown(
+            """
+            <div class='card'>
+                <div class='label'>AI response</div>
+                <div style='font-size:1.02rem; line-height:1.7;'>Enable AI explanation in the sidebar to generate an additional Gemini explanation layer on top of the rule-based result.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    st.markdown("</div>", unsafe_allow_html=True)
 
     strongest = result.get("top_signals", [])
     if strongest:

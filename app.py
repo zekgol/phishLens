@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from textwrap import dedent
 
 import pandas as pd
 import streamlit as st
 
+from src.ai_analysis import build_sanitized_payload, generate_ai_explanation, is_ai_available
 from src.risk_engine import analyze_email
 
 
@@ -232,6 +234,8 @@ st.session_state.setdefault("email_text", "")
 st.session_state.setdefault("analysis_result", None)
 st.session_state.setdefault("selected_sample", "Phishing raw email")
 st.session_state.setdefault("sample_message", "")
+st.session_state.setdefault("ai_explanation_cache_signature", "")
+st.session_state.setdefault("ai_explanation_cache_result", None)
 
 with st.sidebar:
     st.markdown("### System Overview")
@@ -263,6 +267,10 @@ with st.sidebar:
 
     st.markdown("### Safety Note")
     st.caption("The app does not visit links, download files, or attempt any offensive action. It only analyzes pasted text and metadata.")
+    ai_explanation_enabled = st.toggle("Enable AI explanation", value=False, key="enable_ai_explanation")
+    st.caption(
+        "When AI explanation is enabled, structured analysis evidence may be sent to an external AI provider. Do not submit real emails containing personal, confidential, or sensitive information unless you have permission."
+    )
     if st.session_state.get("sample_message"):
         st.success(st.session_state["sample_message"])
 
@@ -425,6 +433,42 @@ if result:
             f"<div class='card'><div style='font-size:1.02rem; line-height:1.7;'>{result.get('recommended_safe_action', '')}</div></div>",
             unsafe_allow_html=True,
         )
+
+    ai_result = None
+    if ai_explanation_enabled:
+        if not is_ai_available():
+            st.warning("AI explanation is enabled, but no GEMINI_API_KEY is configured. Showing local explanation instead.")
+        else:
+            ai_payload = build_sanitized_payload(result)
+            ai_signature = json.dumps(ai_payload, sort_keys=True, ensure_ascii=False)
+            if st.session_state.get("ai_explanation_cache_signature") != ai_signature:
+                with st.spinner("Generating AI explanation layer..."):
+                    st.session_state["ai_explanation_cache_result"] = generate_ai_explanation(result)
+                    st.session_state["ai_explanation_cache_signature"] = ai_signature
+            ai_result = st.session_state.get("ai_explanation_cache_result")
+
+    if ai_result:
+        st.markdown("### AI Explanation Layer")
+        ai_left, ai_right = st.columns(2)
+        with ai_left:
+            st.markdown(
+                f"<div class='card'><div class='label'>Plain-English explanation</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('plain_english_explanation', '')}</div></div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                f"<div class='card' style='margin-top:0.75rem;'><div class='label'>SOC summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('soc_summary', '')}</div></div>",
+                unsafe_allow_html=True,
+            )
+        with ai_right:
+            st.markdown(
+                f"<div class='card'><div class='label'>Investor pitch summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('investor_pitch_summary', '')}</div></div>",
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                f"<div class='card' style='margin-top:0.75rem;'><div class='label'>Recommended safe action</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('recommended_safe_action', '')}</div></div>",
+                unsafe_allow_html=True,
+            )
+        st.caption(ai_result.get("limitation_note", ""))
 
     strongest = result.get("top_signals", [])
     if strongest:

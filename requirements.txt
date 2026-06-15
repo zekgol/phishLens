@@ -3,3 +3,4 @@ pandas
 tldextract
 rapidfuzz
 pytest
+google-genai

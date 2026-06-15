@@ -77,6 +77,39 @@ streamlit run app.py
 
 No secrets or external services are required. The app runs entirely from local Python code and the bundled sample emails.
 
+## Optional Gemini AI Explanation Layer
+
+The core PhishLens score stays local and rule-based. Gemini is only used to generate an optional explanation layer on top of the existing analysis result.
+
+### Local setup on Windows PowerShell
+
+```powershell
+$env:GEMINI_API_KEY="your_api_key_here"
+streamlit run app.py
+```
+
+### Local setup on macOS/Linux
+
+```bash
+export GEMINI_API_KEY="your_api_key_here"
+streamlit run app.py
+```
+
+### Streamlit Cloud setup
+
+Add this to Streamlit secrets:
+
+```toml
+GEMINI_API_KEY="your_api_key_here"
+```
+
+### Notes
+
+- The app works without Gemini.
+- Gemini is only used for explanation generation.
+- The rule-based engine remains the source of the risk score.
+- Avoid submitting sensitive real emails to external AI providers unless you have permission.
+
 ## Example Use Cases
 
 - University security awareness demos

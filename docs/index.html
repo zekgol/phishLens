@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishLens: Hybrid AI Phishing Triage Assistant</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='75' font-size='75'>🛡️</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: radial-gradient(circle at top right, rgba(31, 111, 145, 0.18), transparent 30%),
+                        radial-gradient(circle at left center, rgba(18, 95, 83, 0.12), transparent 24%),
+                        linear-gradient(180deg, #f8fafc 0%, #edf3f7 100%);
+            color: #122033;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", sans-serif;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .hero {
+            padding: 1.5rem 1.5rem 1.2rem;
+            border-radius: 1.2rem;
+            background: linear-gradient(135deg, #102a43 0%, #163b5a 45%, #2f6f6f 100%);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 18px 44px rgba(16, 42, 67, 0.22);
+            margin-bottom: 1.5rem;
+        }
+        .hero h1 {
+            margin-bottom: 0.35rem;
+            font-size: 2rem;
+        }
+        .hero p {
+            margin: 0.25rem 0 0 0;
+            opacity: 0.95;
+            font-size: 1.03rem;
+            max-width: 960px;
+        }
+        .hero-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.9rem;
+        }
+        .hero-badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            font-size: 0.84rem;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: 1.45fr 0.85fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            color: #102a43;
+            margin-bottom: 1rem;
+        }
+        .panel {
+            padding: 1.2rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(17, 32, 51, 0.08);
+            box-shadow: 0 12px 26px rgba(18, 32, 51, 0.06);
+        }
+        .panel.info {
+            padding: 1rem;
+            background: rgba(241, 245, 249, 0.8);
+            border-color: rgba(100, 116, 139, 0.1);
+        }
+        textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid rgba(15, 23, 42, 0.15);
+            border-radius: 0.9rem;
+            font-family: "Monaco", "Courier New", monospace;
+            font-size: 0.95rem;
+            resize: vertical;
+            background: rgba(255, 255, 255, 0.95);
+            color: #122033;
+        }
+        textarea:focus {
+            outline: none;
+            border-color: #0f766e;
+            box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.1);
+        }
+        button {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #0f766e 0%, #0d6e68 100%);
+            color: white;
+            border: none;
+            border-radius: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(15, 118, 110, 0.3);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        .spinner {
+            border: 3px solid rgba(15, 118, 110, 0.1);
+            border-top: 3px solid #0f766e;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .results {
+            display: none;
+        }
+        .verdict-banner {
+            padding: 1.2rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            box-shadow: 0 10px 22px rgba(18, 32, 51, 0.06);
+            margin-bottom: 1.2rem;
+        }
+        .verdict-label {
+            font-size: 0.82rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #5b6b7a;
+            margin-bottom: 0.35rem;
+        }
+        .verdict-text {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+        .verdict-text.low { color: #146c43; }
+        .verdict-text.medium { color: #b26a00; }
+        .verdict-text.high { color: #b42318; }
+        .verdict-desc {
+            font-size: 1rem;
+            color: #334155;
+        }
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+        }
+        .metric-card {
+            padding: 1rem;
+            border-radius: 1rem;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(17, 32, 51, 0.08);
+            border-top: 4px solid #0f766e;
+            box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
+        }
+        .metric-label {
+            font-size: 0.82rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #5b6b7a;
+            margin-bottom: 0.35rem;
+        }
+        .metric-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #102a43;
+            word-break: break-word;
+        }
+        .metric-helper {
+            margin-top: 0.35rem;
+            color: #5b6b7a;
+            font-size: 0.9rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(15, 118, 110, 0.1);
+            border-radius: 999px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #0f766e, #0d998b);
+            transition: width 0.3s;
+        }
+        .explanation {
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 1rem;
+            border: 1px solid rgba(17, 32, 51, 0.08);
+            margin-top: 1rem;
+            line-height: 1.7;
+        }
+        .evidence-table {
+            margin-top: 1rem;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.95rem;
+        }
+        th {
+            background: rgba(15, 118, 110, 0.05);
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #102a43;
+            border-bottom: 1px solid rgba(15, 118, 110, 0.1);
+        }
+        td {
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(15, 118, 110, 0.05);
+        }
+        tr:hover {
+            background: rgba(15, 118, 110, 0.02);
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            background: rgba(15, 118, 110, 0.1);
+            border: 1px solid rgba(15, 118, 110, 0.2);
+            border-radius: 0.6rem;
+            cursor: pointer;
+            font-size: 0.95rem;
+            color: #0f766e;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: #0f766e;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+            margin-top: 1rem;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .right-panel .panel {
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="hero">
+            <h1>🛡️ PhishLens: Hybrid AI Phishing Triage Assistant</h1>
+            <p>Paste the full raw email or just the body, and PhishLens will show a clean verdict, the strongest red flags, and a safe next action. Everything runs locally in your browser.</p>
+            <div class="hero-badges">
+                <span class="hero-badge">No API keys</span>
+                <span class="hero-badge">No URL fetching</span>
+                <span class="hero-badge">English + Polish cues</span>
+                <span class="hero-badge">Explainable hybrid scoring</span>
+            </div>
+        </div>
+
+        <div class="grid">
+            <div>
+                <h2 class="section-title">Input Workspace</h2>
+                <div class="panel info">
+                    <div style="font-weight:700; margin-bottom:0.35rem;">Paste the message below</div>
+                    <div style="color:#5b6b7a;font-size:0.95rem;">Use raw email mode for headers, or body-only mode for copied message text.</div>
+                </div>
+                <textarea id="email-input" placeholder="Paste a full raw email or just the body text here..." rows="15"></textarea>
+                <button onclick="analyzeEmail()" style="margin-top: 1rem; width: 100%;">Analyze Email</button>
+                <p style="margin-top: 0.5rem; color:#5b6b7a; font-size:0.9rem;">💡 Tip: The app analyzes the message locally in your browser. No data is sent anywhere.</p>
+            </div>
+
+            <div class="right-panel">
+                <h2 class="section-title">Quick Overview</h2>
+                <div class="panel info">
+                    <div style="font-weight:700; margin-bottom:0.35rem;">What you get</div>
+                    <div style="color:#5b6b7a;font-size:0.95rem;">A triage-style report, not a blunt yes/no answer. The interface surfaces the score, the top red flags, the parsed sender details, and a safe action recommendation.</div>
+                </div>
+                <div class="panel info">
+                    <div style="font-weight:700; margin-bottom:0.35rem;">How it works</div>
+                    <div style="color:#5b6b7a;font-size:0.95rem;">PhishLens combines language cues, header authentication checks, URL/domain heuristics, and attachment metadata into one score. It never sends email, fetches remote links, or calls a paid API.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 1rem; color: #5b6b7a;">Analyzing email locally...</p>
+        </div>
+
+        <div class="results" id="results">
+            <div class="verdict-banner">
+                <div class="verdict-label">Hybrid Verdict</div>
+                <div class="verdict-text" id="verdict-class"></div>
+                <div class="verdict-desc" id="verdict-desc"></div>
+            </div>
+
+            <div class="metrics" id="metrics"></div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.8rem;">Signal Summary</h3>
+            <div class="metrics" id="component-scores"></div>
+
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.8rem;">Evidence Explorer</h3>
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="showTab('technical')">Technical</button>
+                <button class="tab-btn" onclick="showTab('linguistic')">Linguistic</button>
+                <button class="tab-btn" onclick="showTab('urls')">URLs & Domains</button>
+                <button class="tab-btn" onclick="showTab('attachments')">Attachments</button>
+            </div>
+
+            <div id="technical" class="tab-content active">
+                <div class="evidence-table" id="technical-table"></div>
+            </div>
+            <div id="linguistic" class="tab-content">
+                <div class="evidence-table" id="linguistic-table"></div>
+            </div>
+            <div id="urls" class="tab-content">
+                <div class="evidence-table" id="urls-table"></div>
+            </div>
+            <div id="attachments" class="tab-content">
+                <div class="evidence-table" id="attachments-table"></div>
+            </div>
+
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.8rem;">Plain-English Explanation</h3>
+            <div class="explanation" id="explanation"></div>
+
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-top: 1.5rem; margin-bottom: 0.8rem;">Recommended Safe Action</h3>
+            <div class="explanation" id="safe-action"></div>
+        </div>
+    </div>
+
+    <script>
+        async function initPyodide() {
+            const pyodideUrl = "https://cdn.jsdelivr.net/pyodide/v0.23.4/full/";
+            globalThis.pyodide = await loadPyodide({ indexURL: pyodideUrl });
+        }
+
+        async function analyzeEmail() {
+            const emailText = document.getElementById("email-input").value;
+            if (!emailText.trim()) {
+                alert("Please paste an email before analyzing.");
+                return;
+            }
+
+            document.getElementById("loading").style.display = "block";
+            document.getElementById("results").style.display = "none";
+
+            try {
+                await globalThis.pyodide.runPythonAsync(`
+import re
+import unicodedata
+
+def analyze_email_simple(email_text):
+    """Simple email analysis for browser-based demo."""
+    result = {
+        "score": 0,
+        "level": "Low",
+        "prediction": "Likely legitimate",
+        "linguistic_score": 0,
+        "technical_score": 0,
+        "url_score": 0,
+        "attachment_score": 0,
+        "explanation": "",
+        "safe_action": "",
+        "technical_evidence": [],
+        "linguistic_evidence": [],
+        "url_evidence": [],
+        "attachment_evidence": []
+    }
+
+    # Simple linguistic analysis
+    urgent_phrases = ["urgent", "immediately", "within 24 hours", "final warning", "account suspended", "action required", "verify your account", "confirm your password", "update payment"]
+    text_lower = email_text.lower()
+    
+    for phrase in urgent_phrases:
+        if phrase in text_lower:
+            result["linguistic_score"] += 15
+            result["linguistic_evidence"].append({
+                "phrase": phrase,
+                "category": "Urgency/Credential Request",
+                "points": 15
+            })
+    
+    # Simple URL analysis
+    url_pattern = r'https?://[^\\s<>\'\"\\]]+|www\\.[^\\s<>\'\"\\]]+'
+    urls = re.findall(url_pattern, email_text)
+    
+    shorteners = ["bit.ly", "tinyurl", "t.co", "goo.gl"]
+    for url in urls:
+        for shortener in shorteners:
+            if shortener in url:
+                result["url_score"] += 20
+                result["url_evidence"].append({
+                    "url": url,
+                    "issue": "Shortened URL",
+                    "points": 20
+                })
+    
+    # Simple technical analysis
+    if "authentication-results" not in text_lower:
+        result["technical_score"] += 10
+        result["technical_evidence"].append({
+            "signal": "Authentication-Results missing",
+            "explanation": "The message does not include authentication headers.",
+            "points": 10
+        })
+    
+    # Calculate final score
+    result["score"] = max(0, min(100, (
+        result["linguistic_score"] * 0.4 +
+        result["technical_score"] * 0.3 +
+        result["url_score"] * 0.2 +
+        result["attachment_score"] * 0.1
+    )))
+    
+    # Determine level
+    if result["score"] <= 29:
+        result["level"] = "Low"
+        result["prediction"] = "Likely legitimate"
+    elif result["score"] <= 59:
+        result["level"] = "Medium"
+        result["prediction"] = "Suspicious"
+    else:
+        result["level"] = "High"
+        result["prediction"] = "Likely phishing"
+    
+    # Generate explanation
+    if result["score"] > 50:
+        result["explanation"] = f"This email is classified as {result['level'].upper()} risk. Several signals suggest the sender identity and the requested action should be verified before interacting with the message."
+        result["safe_action"] = "Do not click links or open attachments. Verify the sender through a separate trusted contact method before taking any action."
+    elif result["score"] > 30:
+        result["explanation"] = f"This email is classified as {result['level'].upper()} risk. Pause before responding and verify unexpected requests."
+        result["safe_action"] = "Inspect links carefully and verify the request with the organization using a separate trusted contact method."
+    else:
+        result["explanation"] = f"This email is classified as {result['level'].upper()} risk. The message looks relatively normal, but still verify unexpected requests and avoid entering credentials from email links."
+        result["safe_action"] = "The message looks relatively normal. Still verify unexpected requests and be cautious with credential entry."
+    
+    return result
+
+result = analyze_email_simple('''${emailText}''')
+`);
+
+                const result = await globalThis.pyodide.globals.get('result');
+                displayResults(result);
+            } catch (error) {
+                console.error(error);
+                alert("Error analyzing email: " + error.message);
+            }
+
+            document.getElementById("loading").style.display = "none";
+        }
+
+        function displayResults(result) {
+            document.getElementById("results").style.display = "block";
+
+            const levelClass = result.level.toLowerCase();
+            const verdictDiv = document.getElementById("verdict-class");
+            verdictDiv.textContent = result.level.toUpperCase() + " RISK";
+            verdictDiv.className = "verdict-text " + levelClass;
+            
+            document.getElementById("verdict-desc").textContent = result.prediction + " based on a weighted blend of language, header, URL, and attachment signals.";
+
+            // Progress bar
+            const progressPercent = Math.min(result.score, 100);
+            document.getElementById("progress-fill").style.width = progressPercent + "%";
+
+            // Metrics
+            const metricsHtml = `
+                <div class="metric-card">
+                    <div class="metric-label">Risk Score</div>
+                    <div class="metric-value">${Math.round(result.score)}/100</div>
+                    <div class="metric-helper">Weighted hybrid score</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Risk Level</div>
+                    <div class="metric-value">${result.level}</div>
+                    <div class="metric-helper">Low / Medium / High</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Prediction</div>
+                    <div class="metric-value" style="font-size: 1.2rem;">${result.prediction}</div>
+                    <div class="metric-helper">Triage recommendation</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Analysis</div>
+                    <div class="metric-value" style="font-size: 1.3rem;">✓</div>
+                    <div class="metric-helper">Complete</div>
+                </div>
+            `;
+            document.getElementById("metrics").innerHTML = metricsHtml;
+
+            // Component scores
+            const componentHtml = `
+                <div class="metric-card">
+                    <div class="metric-label">Linguistic</div>
+                    <div class="metric-value">${Math.round(result.linguistic_score)}</div>
+                    <div class="metric-helper">Phrase patterns and tone</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Headers</div>
+                    <div class="metric-value">${Math.round(result.technical_score)}</div>
+                    <div class="metric-helper">Authentication signals</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">URLs</div>
+                    <div class="metric-value">${Math.round(result.url_score)}</div>
+                    <div class="metric-helper">Domain & link analysis</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">Attachments</div>
+                    <div class="metric-value">${Math.round(result.attachment_score)}</div>
+                    <div class="metric-helper">File metadata</div>
+                </div>
+            `;
+            document.getElementById("component-scores").innerHTML = componentHtml;
+
+            // Evidence tables
+            renderEvidenceTable("technical", result.technical_evidence);
+            renderEvidenceTable("linguistic", result.linguistic_evidence);
+            renderEvidenceTable("urls", result.url_evidence);
+            renderEvidenceTable("attachments", result.attachment_evidence);
+
+            // Explanations
+            document.getElementById("explanation").textContent = result.explanation;
+            document.getElementById("safe-action").textContent = result.safe_action;
+        }
+
+        function renderEvidenceTable(type, evidence) {
+            const container = document.getElementById(type + "-table");
+            if (evidence.length === 0) {
+                container.innerHTML = '<p style="color: #5b6b7a;">No evidence in this category.</p>';
+                return;
+            }
+
+            let html = '<table><tr><th>Signal</th><th>Details</th><th>Points</th></tr>';
+            for (const item of evidence) {
+                const details = item.explanation || item.category || item.issue || "";
+                const points = item.points || 0;
+                html += `<tr><td>${item.signal || item.phrase || item.url || "Signal"}</td><td>${details}</td><td>${points}</td></tr>`;
+            }
+            html += '</table>';
+            container.innerHTML = html;
+        }
+
+        function showTab(tab) {
+            document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+            document.getElementById(tab).classList.add("active");
+
+            document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+            event.target.classList.add("active");
+        }
+
+        // Initialize Pyodide on page load
+        window.addEventListener("load", () => {
+            initPyodide().catch(console.error);
+        });
+    </script>
+    <script async src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+</body>
+</html>

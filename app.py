@@ -88,15 +88,16 @@ st.markdown(
     <style>
     .stApp {
         background:
-            radial-gradient(circle at top right, rgba(31, 111, 145, 0.18), transparent 30%),
-            radial-gradient(circle at left center, rgba(18, 95, 83, 0.12), transparent 24%),
+            radial-gradient(circle at top right, rgba(31, 111, 145, 0.22), transparent 28%),
+            radial-gradient(circle at left center, rgba(18, 95, 83, 0.16), transparent 22%),
+            radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.10), transparent 26%),
             linear-gradient(180deg, #f8fafc 0%, #edf3f7 100%);
         color: #122033;
     }
     .hero {
         padding: 1.35rem 1.45rem 1.15rem 1.45rem;
         border-radius: 1.2rem;
-        background: linear-gradient(135deg, #102a43 0%, #163b5a 45%, #2f6f6f 100%);
+        background: linear-gradient(135deg, #102a43 0%, #134e5e 42%, #2f6f6f 78%, #3a8d84 100%);
         color: white;
         border: 1px solid rgba(255, 255, 255, 0.12);
         box-shadow: 0 18px 44px rgba(16, 42, 67, 0.22);
@@ -128,14 +129,14 @@ st.markdown(
     .panel {
         padding: 1rem;
         border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.88);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 251, 252, 0.92) 100%);
         border: 1px solid rgba(17, 32, 51, 0.08);
         box-shadow: 0 12px 26px rgba(18, 32, 51, 0.06);
     }
     .score-banner {
         padding: 1rem 1.1rem;
         border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.9);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(241, 250, 249, 0.95));
         border: 1px solid rgba(15, 23, 42, 0.08);
         box-shadow: 0 10px 22px rgba(18, 32, 51, 0.06);
         margin-bottom: 0.9rem;
@@ -167,7 +168,7 @@ st.markdown(
     .metric-card {
         padding: 1rem;
         border-radius: 1rem;
-        background: rgba(255, 255, 255, 0.92);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 251, 252, 0.96) 100%);
         border: 1px solid rgba(17, 32, 51, 0.08);
         border-top: 4px solid #0f766e;
         box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
@@ -199,7 +200,7 @@ st.markdown(
     .card {
         padding: 1rem 1.05rem;
         border-radius: 0.95rem;
-        background: rgba(255, 255, 255, 0.88);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 251, 253, 0.94) 100%);
         border: 1px solid rgba(17, 32, 51, 0.08);
         box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
     }
@@ -235,6 +236,37 @@ st.markdown(
         background: rgba(15, 118, 110, 0.12);
         color: #0f766e;
         font-size: 0.74rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+    .input-panel {
+        position: relative;
+        overflow: hidden;
+        border-left: 5px solid #0f766e;
+    }
+    .input-panel::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(31, 111, 145, 0.04), transparent 65%);
+        pointer-events: none;
+    }
+    .input-title {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        margin-bottom: 0.35rem;
+        color: #102a43;
+    }
+    .input-chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.2rem 0.55rem;
+        border-radius: 999px;
+        background: rgba(31, 111, 145, 0.12);
+        color: #1f6f91;
+        font-size: 0.72rem;
         font-weight: 800;
         letter-spacing: 0.04em;
         text-transform: uppercase;
@@ -308,11 +340,11 @@ analysis_mode = "body" if mode_label == "Email body only" else "raw"
 left_col, right_col = st.columns([1.45, 0.85], gap="large")
 
 with left_col:
-    st.markdown("## Input Workspace")
+    st.markdown("## Input")
     st.markdown(
         """
-        <div class='panel'>
-            <div style='font-weight:700; margin-bottom:0.35rem;'>Paste the message below</div>
+        <div class='panel input-panel'>
+            <div class='input-title'><span class='input-chip'>Paste</span><span style='font-weight:700;'>Paste the message below</span></div>
             <div style='color:#5b6b7a;'>Use raw email mode for headers, or body-only mode for copied message text.</div>
         </div>
         """,

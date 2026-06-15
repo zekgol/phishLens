@@ -1,0 +1,16 @@
+From: "University IT Service Desk" <it-support@example.org>
+Reply-To: "University IT Service Desk" <it-support@example.org>
+Return-Path: <it-support@example.org>
+Message-ID: <20260615.1001@mailer.example.org>
+Subject: Weekly maintenance notice for your inbox
+Date: Mon, 15 Jun 2026 10:00:00 +0000
+Authentication-Results: mail.example.org; spf=pass smtp.mailfrom=example.org; dkim=pass header.d=example.org; dmarc=pass header.from=example.org
+Received: from relay1.example.org by mail.example.org with ESMTP id 54321 for <user@example.org>; Mon, 15 Jun 2026 10:00:01 +0000
+Received: from app.example.org by relay1.example.org with ESMTP id 54320 for <user@example.org>; Mon, 15 Jun 2026 09:59:58 +0000
+
+Hello,
+
+This is a routine notice that your inbox maintenance window is scheduled for this weekend. No action is required unless you already requested a change.
+
+Best regards,
+University IT Service Desk

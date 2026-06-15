@@ -1,0 +1,12 @@
+From: "Account Security" <security@example.net>
+Reply-To: "Help Desk" <help@example.org>
+Return-Path: <bounce@example.org>
+Message-ID: <20260615.0001@mail.example.net>
+Subject: Immediate action required - your account access will expire
+Date: Mon, 15 Jun 2026 09:00:00 +0000
+Authentication-Results: mail.example.net; spf=fail smtp.mailfrom=example.net; dkim=fail header.d=example.net; dmarc=fail action=quarantine header.from=example.net
+Received: from unknown-host (unknown-host [203.0.113.55]) by mail.example.net with ESMTP id 12345 for <user@example.org>; Mon, 15 Jun 2026 09:00:01 +0000
+
+We kindly ask you to verify your account immediately. Your access will expire within 24 hours unless you confirm your identity and login to continue.
+
+Please review this secure message here: https://bit.ly/example-update

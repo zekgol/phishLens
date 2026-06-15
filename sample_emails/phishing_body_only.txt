@@ -1,0 +1,5 @@
+Final warning: your account will be blocked immediately if you do not verify your identity within 24 hours.
+
+Please sign in to verify your account and confirm your password at https://example.net/security.
+
+We appreciate your quick response.

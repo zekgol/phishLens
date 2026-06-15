@@ -519,19 +519,18 @@ if result:
                     unsafe_allow_html=True,
                 )
                 st.markdown(
-                    f"<div class='card' style='margin-top:0.75rem;'><div class='label'>SOC summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('soc_summary', '')}</div></div>",
+                    f"<div class='card' style='margin-top:0.75rem;'><div class='label'>Technical summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('technical_summary', '')}</div></div>",
                     unsafe_allow_html=True,
                 )
             with ai_right:
                 st.markdown(
-                    f"<div class='card'><div class='label'>Investor pitch summary</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('investor_pitch_summary', '')}</div></div>",
+                    f"<div class='card'><div class='label'>Recommended safe action</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('recommended_safe_action', '')}</div></div>",
                     unsafe_allow_html=True,
                 )
                 st.markdown(
-                    f"<div class='card' style='margin-top:0.75rem;'><div class='label'>Recommended safe action</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('recommended_safe_action', '')}</div></div>",
+                    f"<div class='card' style='margin-top:0.75rem;'><div class='label'>Limitation note</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('limitation_note', '')}</div></div>",
                     unsafe_allow_html=True,
                 )
-            st.caption(ai_result.get("limitation_note", ""))
         else:
             st.markdown(
                 """

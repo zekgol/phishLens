@@ -92,15 +92,11 @@ def _local_fallback(result: dict[str, Any], reason: str) -> dict[str, str]:
 
     plain_english = _safe_text(
         result.get("plain_explanation") or result.get("plain_english_summary"),
-        f"This email is classified as {risk_level.lower()} risk. The rule-based engine remains the source of truth.",
+        f"This email looks like a {risk_level.lower()} risk message. The local rule-based engine is still the source of truth.",
     )
-    soc_summary = _safe_text(
+    technical_summary = _safe_text(
         result.get("technical_summary"),
         f"Final classification: {prediction}. The rule-based engine combines language, header, URL, and attachment evidence into a {score}/100 triage score.",
-    )
-    investor_summary = _safe_text(
-        result.get("investor_summary"),
-        f"PhishLens provides a transparent {score}/100 phishing triage score with explainable evidence and no change to the underlying risk engine.",
     )
     safe_action = _safe_text(
         result.get("recommended_safe_action"),
@@ -111,8 +107,7 @@ def _local_fallback(result: dict[str, Any], reason: str) -> dict[str, str]:
     )
     return {
         "plain_english_explanation": plain_english,
-        "soc_summary": soc_summary,
-        "investor_pitch_summary": investor_summary,
+        "technical_summary": technical_summary,
         "recommended_safe_action": safe_action,
         "limitation_note": limitation_note,
     }
@@ -133,8 +128,7 @@ def _coerce_ai_output(data: dict[str, Any], result: dict[str, Any]) -> dict[str,
 
     output = {
         "plain_english_explanation": _safe_text(data.get("plain_english_explanation"), fallback["plain_english_explanation"]),
-        "soc_summary": _safe_text(data.get("soc_summary"), fallback["soc_summary"]),
-        "investor_pitch_summary": _safe_text(data.get("investor_pitch_summary"), fallback["investor_pitch_summary"]),
+        "technical_summary": _safe_text(data.get("technical_summary"), fallback["technical_summary"]),
         "recommended_safe_action": _safe_text(data.get("recommended_safe_action"), fallback["recommended_safe_action"]),
         "limitation_note": _safe_text(data.get("limitation_note"), fallback["limitation_note"]),
     }
@@ -155,10 +149,11 @@ def generate_ai_explanation(result: dict[str, Any]) -> dict[str, str]:
         f"{SYSTEM_INSTRUCTION}\n\n"
         "The rule-based engine is the source of truth. Do not change the risk score. "
         "Use only the structured evidence below. Do not mention raw email content, headers that were not provided, or any URL that was not explicitly included. "
-        "Explain the existing evidence clearly for a general audience and for a SOC audience. "
-        "Also provide an investor-friendly pitch summary and a recommended safe action. "
+        "Explain the existing evidence clearly in simple language for a general audience and also summarize the technical signals for a security audience. "
+        "Do not write a pitch summary. Provide a recommended safe action. "
+        "Use short, clear sentences and avoid jargon when possible. "
         "Explicitly note that this is decision support, not a perfect verdict. "
-        "Return JSON with these exact keys: plain_english_explanation, soc_summary, investor_pitch_summary, recommended_safe_action, limitation_note.\n\n"
+        "Return JSON with these exact keys: plain_english_explanation, technical_summary, recommended_safe_action, limitation_note.\n\n"
         f"Structured analysis evidence:\n{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
 

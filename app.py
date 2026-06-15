@@ -122,7 +122,7 @@ st.markdown(
         display: inline-block;
         padding: 0.35rem 0.7rem;
         border-radius: 999px;
-        background: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.18);
         border: 1px solid rgba(255, 255, 255, 0.18);
         font-size: 0.84rem;
     }
@@ -136,8 +136,8 @@ st.markdown(
     .score-banner {
         padding: 1rem 1.1rem;
         border-radius: 1rem;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(241, 250, 249, 0.95));
-        border: 1px solid rgba(15, 23, 42, 0.08);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(232, 248, 244, 0.98));
+        border: 1px solid rgba(15, 118, 110, 0.14);
         box-shadow: 0 10px 22px rgba(18, 32, 51, 0.06);
         margin-bottom: 0.9rem;
     }
@@ -152,6 +152,15 @@ st.markdown(
         font-size: 1.14rem;
         font-weight: 800;
         color: #102a43;
+    }
+    .section-title::after {
+        content: "";
+        display: block;
+        width: 3.2rem;
+        height: 0.22rem;
+        margin-top: 0.35rem;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #0f766e, #1f6f91, #3a8d84);
     }
     .section-subtitle {
         font-size: 0.92rem;
@@ -168,9 +177,9 @@ st.markdown(
     .metric-card {
         padding: 1rem;
         border-radius: 1rem;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(247, 251, 252, 0.96) 100%);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(243, 250, 252, 0.98) 100%);
         border: 1px solid rgba(17, 32, 51, 0.08);
-        border-top: 4px solid #0f766e;
+        border-top: 4px solid #1f6f91;
         box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
         height: 100%;
     }
@@ -200,7 +209,7 @@ st.markdown(
     .card {
         padding: 1rem 1.05rem;
         border-radius: 0.95rem;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 251, 253, 0.94) 100%);
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(246, 250, 252, 0.97) 100%);
         border: 1px solid rgba(17, 32, 51, 0.08);
         box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
     }
@@ -214,8 +223,8 @@ st.markdown(
     .ai-section {
         padding: 1rem;
         border-radius: 1rem;
-        background: linear-gradient(135deg, rgba(15, 118, 110, 0.08), rgba(16, 42, 67, 0.06));
-        border: 1px solid rgba(15, 118, 110, 0.18);
+        background: linear-gradient(135deg, rgba(15, 118, 110, 0.12), rgba(31, 111, 145, 0.08), rgba(16, 42, 67, 0.06));
+        border: 1px solid rgba(15, 118, 110, 0.22);
         box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
         margin-top: 0.25rem;
     }
@@ -233,8 +242,8 @@ st.markdown(
         align-items: center;
         padding: 0.22rem 0.6rem;
         border-radius: 999px;
-        background: rgba(15, 118, 110, 0.12);
-        color: #0f766e;
+        background: rgba(31, 111, 145, 0.14);
+        color: #1f6f91;
         font-size: 0.74rem;
         font-weight: 800;
         letter-spacing: 0.04em;
@@ -527,14 +536,10 @@ if result:
                     f"<div class='card'><div class='label'>Recommended safe action</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('recommended_safe_action', '')}</div></div>",
                     unsafe_allow_html=True,
                 )
-                st.markdown(
-                    f"<div class='card' style='margin-top:0.75rem;'><div class='label'>Limitation note</div><div style='font-size:1.02rem; line-height:1.7;'>{ai_result.get('limitation_note', '')}</div></div>",
-                    unsafe_allow_html=True,
-                )
         else:
             st.markdown(
                 """
-                <div class='card'>
+                <div class='card' style='border-left: 4px solid #1f6f91;'>
                     <div class='label'>AI response</div>
                     <div style='font-size:1.02rem; line-height:1.7;'>AI explanation is enabled, but no external AI response was generated. The app is showing the existing local explanation instead.</div>
                 </div>

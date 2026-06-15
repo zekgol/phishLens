@@ -102,14 +102,10 @@ def _local_fallback(result: dict[str, Any], reason: str) -> dict[str, str]:
         result.get("recommended_safe_action"),
         "Do not click links, open attachments, or reply until the sender and request are independently verified.",
     )
-    limitation_note = (
-        f"Gemini explanation unavailable ({reason}). This is a decision-support summary only; the rule-based engine remains the source of truth."
-    )
     return {
         "plain_english_explanation": plain_english,
         "technical_summary": technical_summary,
         "recommended_safe_action": safe_action,
-        "limitation_note": limitation_note,
     }
 
 
@@ -130,7 +126,6 @@ def _coerce_ai_output(data: dict[str, Any], result: dict[str, Any]) -> dict[str,
         "plain_english_explanation": _safe_text(data.get("plain_english_explanation"), fallback["plain_english_explanation"]),
         "technical_summary": _safe_text(data.get("technical_summary"), fallback["technical_summary"]),
         "recommended_safe_action": _safe_text(data.get("recommended_safe_action"), fallback["recommended_safe_action"]),
-        "limitation_note": _safe_text(data.get("limitation_note"), fallback["limitation_note"]),
     }
     return output
 
@@ -152,8 +147,7 @@ def generate_ai_explanation(result: dict[str, Any]) -> dict[str, str]:
         "Explain the existing evidence clearly in simple language for a general audience and also summarize the technical signals for a security audience. "
         "Do not write a pitch summary. Provide a recommended safe action. "
         "Use short, clear sentences and avoid jargon when possible. "
-        "Explicitly note that this is decision support, not a perfect verdict. "
-        "Return JSON with these exact keys: plain_english_explanation, technical_summary, recommended_safe_action, limitation_note.\n\n"
+        "Return JSON with these exact keys: plain_english_explanation, technical_summary, recommended_safe_action.\n\n"
         f"Structured analysis evidence:\n{json.dumps(payload, ensure_ascii=False, indent=2)}"
     )
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from textwrap import dedent
 
 import pandas as pd
 import streamlit as st
@@ -21,35 +22,184 @@ SAMPLE_FILES = {
 
 st.set_page_config(page_title=APP_TITLE, page_icon="🛡️", layout="wide")
 
+
+def _score_color(level: str) -> str:
+    return {
+        "Low": "#15803d",
+        "Medium": "#b45309",
+        "High": "#b91c1c",
+    }.get(level, "#334155")
+
+
+def _badge_class(level: str) -> str:
+    return {
+        "Low": "badge-low",
+        "Medium": "badge-medium",
+        "High": "badge-high",
+    }.get(level, "badge-neutral")
+
+
+def _metric_card(title: str, value: str, helper: str, accent: str) -> str:
+    return dedent(
+        f"""
+        <div class="metric-card" style="border-top-color: {accent};">
+            <div class="metric-title">{title}</div>
+            <div class="metric-value">{value}</div>
+            <div class="metric-helper">{helper}</div>
+        </div>
+        """
+    )
+
+
+def _section_header(title: str, subtitle: str) -> None:
+    st.markdown(
+        f"""
+        <div class="section-header">
+            <div class="section-title">{title}</div>
+            <div class="section-subtitle">{subtitle}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _evidence_table(title: str, rows: list[dict], empty_message: str) -> None:
+    st.markdown(f"<div class='subsection-title'>{title}</div>", unsafe_allow_html=True)
+    if rows:
+        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+    else:
+        st.info(empty_message)
+
+
+def _load_sample(sample_key: str) -> None:
+    sample_path = SAMPLE_FILES.get(sample_key)
+    if sample_path and sample_path.exists():
+        st.session_state["email_text"] = sample_path.read_text(encoding="utf-8")
+        st.session_state["analysis_result"] = None
+        st.session_state["sample_message"] = f"Loaded {sample_key.lower()}"
+    else:
+        st.session_state["sample_message"] = "Sample file not found."
+
+
 st.markdown(
     """
     <style>
     .stApp {
-        background: linear-gradient(180deg, #f6f8fb 0%, #eef2f7 100%);
+        background:
+            radial-gradient(circle at top right, rgba(31, 111, 145, 0.18), transparent 30%),
+            radial-gradient(circle at left center, rgba(18, 95, 83, 0.12), transparent 24%),
+            linear-gradient(180deg, #f8fafc 0%, #edf3f7 100%);
         color: #122033;
     }
     .hero {
-        padding: 1.2rem 1.4rem;
-        border-radius: 1rem;
-        background: linear-gradient(135deg, #102a43 0%, #1f4f67 55%, #2f6f6f 100%);
+        padding: 1.35rem 1.45rem 1.15rem 1.45rem;
+        border-radius: 1.2rem;
+        background: linear-gradient(135deg, #102a43 0%, #163b5a 45%, #2f6f6f 100%);
         color: white;
         border: 1px solid rgba(255, 255, 255, 0.12);
-        box-shadow: 0 12px 30px rgba(16, 42, 67, 0.18);
+        box-shadow: 0 18px 44px rgba(16, 42, 67, 0.22);
+        margin-bottom: 1rem;
     }
     .hero h1 {
-        margin-bottom: 0.3rem;
+        margin-bottom: 0.35rem;
     }
     .hero p {
-        margin: 0.3rem 0 0 0;
+        margin: 0.25rem 0 0 0;
         opacity: 0.95;
-        font-size: 1.02rem;
+        font-size: 1.03rem;
+        max-width: 960px;
     }
-    .card {
-        padding: 1rem 1.1rem;
-        border-radius: 0.9rem;
-        background: rgba(255, 255, 255, 0.82);
+    .hero-badges {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-top: 0.85rem;
+    }
+    .hero-badge {
+        display: inline-block;
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        font-size: 0.84rem;
+    }
+    .panel {
+        padding: 1rem;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.88);
         border: 1px solid rgba(17, 32, 51, 0.08);
+        box-shadow: 0 12px 26px rgba(18, 32, 51, 0.06);
+    }
+    .score-banner {
+        padding: 1rem 1.1rem;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(15, 23, 42, 0.08);
         box-shadow: 0 10px 22px rgba(18, 32, 51, 0.06);
+        margin-bottom: 0.9rem;
+    }
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: end;
+        gap: 1rem;
+        margin: 1.2rem 0 0.7rem 0;
+    }
+    .section-title {
+        font-size: 1.14rem;
+        font-weight: 800;
+        color: #102a43;
+    }
+    .section-subtitle {
+        font-size: 0.92rem;
+        color: #5b6b7a;
+        text-align: right;
+        max-width: 660px;
+    }
+    .subsection-title {
+        font-size: 1rem;
+        font-weight: 700;
+        margin: 0.95rem 0 0.35rem 0;
+        color: #102a43;
+    }
+    .metric-card {
+        padding: 1rem;
+        border-radius: 1rem;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(17, 32, 51, 0.08);
+        border-top: 4px solid #0f766e;
+        box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
+        height: 100%;
+    }
+    .metric-title {
+        font-size: 0.82rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #5b6b7a;
+        margin-bottom: 0.35rem;
+    }
+    .metric-value {
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #102a43;
+        line-height: 1.1;
+        word-break: break-word;
+    }
+    .metric-helper {
+        margin-top: 0.35rem;
+        color: #5b6b7a;
+        font-size: 0.92rem;
+    }
+    .badge-low { color: #146c43; font-weight: 800; }
+    .badge-medium { color: #b26a00; font-weight: 800; }
+    .badge-high { color: #b42318; font-weight: 800; }
+    .badge-neutral { color: #334155; font-weight: 800; }
+    .card {
+        padding: 1rem 1.05rem;
+        border-radius: 0.95rem;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid rgba(17, 32, 51, 0.08);
+        box-shadow: 0 10px 22px rgba(18, 32, 51, 0.05);
     }
     .label {
         font-size: 0.82rem;
@@ -58,9 +208,6 @@ st.markdown(
         color: #5b6b7a;
         margin-bottom: 0.35rem;
     }
-    .risk-low { color: #146c43; font-weight: 700; }
-    .risk-medium { color: #b26a00; font-weight: 700; }
-    .risk-high { color: #b42318; font-weight: 700; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -70,7 +217,13 @@ st.markdown(
     f"""
     <div class="hero">
         <h1>{APP_TITLE}</h1>
-        <p>Offline, explainable email triage for phishing awareness, SOC demoing, and university pitch presentations. Paste an email, inspect the signals, and see why the model thinks the message is safe or suspicious.</p>
+        <p>Paste the full raw email or just the body, and PhishLens will show a clean verdict, the strongest red flags, and a safe next action. Everything runs locally, with no external API calls and no URL visiting.</p>
+        <div class="hero-badges">
+            <span class="hero-badge">No API keys</span>
+            <span class="hero-badge">No URL fetching</span>
+            <span class="hero-badge">English + Polish cues</span>
+            <span class="hero-badge">Explainable hybrid scoring</span>
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
@@ -79,24 +232,25 @@ st.markdown(
 st.session_state.setdefault("email_text", "")
 st.session_state.setdefault("analysis_result", None)
 st.session_state.setdefault("selected_sample", "Phishing raw email")
+st.session_state.setdefault("sample_message", "")
 
 with st.sidebar:
     st.markdown("### System Overview")
     st.write(
-        "PhishLens combines language cues, header authentication checks, URL/domain heuristics, and attachment metadata into a single risk score. It never sends email, fetches remote links, or calls a paid API."
+        "PhishLens combines language cues, header authentication checks, URL/domain heuristics, and attachment metadata into one score. It never sends email, fetches remote links, or calls a paid API."
     )
-    st.info("This is a decision-support prototype, not a perfect verdict engine.")
+    st.info("Decision-support prototype, not a perfect verdict engine.")
 
     mode_label = st.selectbox("Analysis mode", ["Email body only", "Full raw email with headers"], index=1)
-    selected_sample = st.selectbox("Example email", list(SAMPLE_FILES.keys()), index=list(SAMPLE_FILES.keys()).index(st.session_state.get("selected_sample", "Phishing raw email")))
+    selected_sample = st.selectbox(
+        "Example email",
+        list(SAMPLE_FILES.keys()),
+        index=list(SAMPLE_FILES.keys()).index(st.session_state.get("selected_sample", "Phishing raw email")),
+    )
     st.session_state["selected_sample"] = selected_sample
+
     if st.button("Load selected sample"):
-        sample_path = SAMPLE_FILES.get(selected_sample)
-        if sample_path and sample_path.exists():
-            st.session_state["email_text"] = sample_path.read_text(encoding="utf-8")
-            st.session_state["analysis_result"] = None
-        else:
-            st.error("Sample file not found.")
+        _load_sample(selected_sample)
 
     with st.expander("How it works"):
         st.markdown(
@@ -104,29 +258,63 @@ with st.sidebar:
             - Parse the pasted email locally.
             - Score language, headers, URLs, and attachments separately.
             - Blend the scores into one explainable risk score.
-            - Show the strongest evidence in plain English.
+            - Show the strongest evidence in a presentation-friendly report.
             """
         )
 
     st.markdown("### Safety Note")
-    st.caption("The app does not visit links, download files, or attempt any offensive action. It only analyzes text and metadata that the user pastes into the box.")
+    st.caption("The app does not visit links, download files, or attempt any offensive action. It only analyzes pasted text and metadata.")
+    if st.session_state.get("sample_message"):
+        st.success(st.session_state["sample_message"])
 
 analysis_mode = "body" if mode_label == "Email body only" else "raw"
 
-st.markdown("## Email to analyze")
-st.text_area(
-    "Paste the email content here",
-    key="email_text",
-    height=320,
-    placeholder="Paste a full raw email or just the body text here...",
-    label_visibility="collapsed",
-)
+left_col, right_col = st.columns([1.45, 0.85], gap="large")
 
-button_col, helper_col = st.columns([1, 3])
-with button_col:
+with left_col:
+    st.markdown("## Input Workspace")
+    st.markdown(
+        """
+        <div class='panel'>
+            <div style='font-weight:700; margin-bottom:0.35rem;'>Paste the message below</div>
+            <div style='color:#5b6b7a;'>Use raw email mode for headers, or body-only mode for copied message text.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.text_area(
+        "Paste the email content here",
+        key="email_text",
+        height=390,
+        placeholder="Paste a full raw email or just the body text here...",
+        label_visibility="collapsed",
+    )
     analyze_clicked = st.button("Analyze Email", type="primary", use_container_width=True)
-with helper_col:
-    st.caption("Tip: Load one of the examples from the sidebar to see how the hybrid signals change across phishing and legitimate messages.")
+    st.caption("Tip: Load a sample from the sidebar to instantly see phishing vs legitimate examples.")
+
+with right_col:
+    st.markdown("## Quick Overview")
+    st.markdown(
+        """
+        <div class='card'>
+            <div class='label'>What you get</div>
+            <div style='font-size:1.02rem; font-weight:700; margin-bottom:0.35rem;'>A triage-style report, not a blunt yes/no answer.</div>
+            <div style='color:#5b6b7a;'>The interface surfaces the score, the top red flags, the parsed sender details, and a safe action recommendation.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("<div style='height:0.65rem;'></div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div class='card'>
+            <div class='label'>Current focus</div>
+            <div style='font-size:1.02rem; font-weight:700; margin-bottom:0.35rem;'>Full-message analysis</div>
+            <div style='color:#5b6b7a;'>Paste the complete email and the app will inspect sender identity, authentication results, suspicious language, and link structure together.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 if analyze_clicked:
     if not st.session_state.get("email_text", "").strip():
@@ -139,70 +327,121 @@ result = st.session_state.get("analysis_result")
 
 if result:
     risk_class = result.get("risk_level", "Low")
-    risk_class_slug = risk_class.lower()
+    risk_color = _score_color(risk_class)
+    badge_class = _badge_class(risk_class)
+    score_value = int(result.get("final_score", 0))
     component_scores = {
         "Linguistic": result.get("linguistic", {}).get("linguistic_risk_score", 0),
         "Headers": result.get("technical", {}).get("authentication_risk_score", 0),
         "URLs": result.get("urls", {}).get("url_risk_score", 0),
         "Attachments": result.get("attachments", {}).get("attachment_risk_score", 0),
     }
+    parsed = result.get("parsed_email", {})
+    url_count = len(result.get("urls", {}).get("extracted_urls", []))
 
-    st.markdown("## Results")
-    score_col, level_col, prediction_col, urls_col = st.columns(4)
-    score_col.metric("Final risk score", f"{result.get('final_score', 0)}/100")
-    level_col.metric("Final risk level", risk_class)
-    prediction_col.metric("Prediction", result.get("prediction", "Likely legitimate"))
-    urls_col.metric("URLs found", len(result.get("urls", {}).get("extracted_urls", [])))
-
+    st.markdown("## Verdict")
     st.markdown(
-        f"<div class='card'><div class='label'>Hybrid summary</div><div class='risk-{risk_class_slug}'>This message is classified as {risk_class.upper()} risk.</div><div style='margin-top:0.4rem;'>The score combines linguistic, technical, URL, and attachment evidence using a weighted rule-based model.</div></div>",
+        f"""
+        <div class="score-banner">
+            <div class="label">Hybrid verdict</div>
+            <div class="{badge_class}" style="font-size: 1.5rem;">{risk_class.upper()} RISK</div>
+            <div style="margin-top:0.35rem; font-size:1rem; color:#334155;">
+                {result.get('prediction', 'Likely legitimate')} based on a weighted blend of language, header, URL, and attachment signals.
+            </div>
+        </div>
+        """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("### Component Scores")
-    component_df = pd.DataFrame(
-        [{"Signal family": key, "Score": value} for key, value in component_scores.items()]
-    )
-    st.dataframe(component_df, use_container_width=True, hide_index=True)
+    score_col, level_col, prediction_col, url_col = st.columns(4)
+    score_col.markdown(_metric_card("Risk score", f"{score_value}/100", "Weighted hybrid score", risk_color), unsafe_allow_html=True)
+    level_col.markdown(_metric_card("Risk level", risk_class, "Low / Medium / High", risk_color), unsafe_allow_html=True)
+    prediction_col.markdown(_metric_card("Prediction", result.get("prediction", "Likely legitimate"), "Triage recommendation", risk_color), unsafe_allow_html=True)
+    url_col.markdown(_metric_card("URLs found", str(url_count), "Links extracted from body", "#0f766e"), unsafe_allow_html=True)
 
-    def render_evidence_table(title: str, rows: list[dict], empty_message: str) -> None:
-        st.subheader(title)
-        if rows:
-            st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
-        else:
-            st.info(empty_message)
+    st.progress(min(max(score_value, 0), 100) / 100, text="Overall phishing risk")
 
-    technical_rows = result.get("technical", {}).get("evidence", [])
-    linguistic_rows = result.get("linguistic", {}).get("detected_cues", [])
-    url_rows = result.get("urls", {}).get("evidence", [])
-    attachment_rows = result.get("attachments", {}).get("evidence", [])
+    _section_header("Signal Summary", "The hybrid engine splits the message into signal families so you can see what drove the verdict.")
+    component_cards = st.columns(4)
+    card_specs = [
+        ("Linguistic", component_scores["Linguistic"], "Phrase patterns and tone"),
+        ("Headers", component_scores["Headers"], "SPF / DKIM / DMARC and mismatches"),
+        ("URLs", component_scores["URLs"], "Shorteners, lookalikes, and domain tricks"),
+        ("Attachments", component_scores["Attachments"], "Suspicious filenames and extensions"),
+    ]
+    for col, (title, value, helper) in zip(component_cards, card_specs):
+        col.markdown(_metric_card(title, f"{value}", helper, risk_color), unsafe_allow_html=True)
 
-    render_evidence_table(
-        "Technical evidence",
-        technical_rows,
-        "No technical authentication or header red flags were detected in this message.",
+    _section_header("Sender Snapshot", "Parsed details extracted from the raw email when available.")
+    snapshot_df = pd.DataFrame(
+        [
+            {"Field": "From", "Value": parsed.get("from", "") or "-"},
+            {"Field": "Reply-To", "Value": parsed.get("reply_to", "") or "-"},
+            {"Field": "Return-Path", "Value": parsed.get("return_path", "") or "-"},
+            {"Field": "Message-ID", "Value": parsed.get("message_id", "") or "-"},
+            {"Field": "Subject", "Value": parsed.get("subject", "") or "-"},
+            {"Field": "Received count", "Value": len(parsed.get("received_headers", []) or [])},
+        ]
     )
-    render_evidence_table(
-        "Linguistic evidence",
-        linguistic_rows,
-        "No strong phishing-style language cues were detected.",
-    )
-    render_evidence_table(
-        "URL / domain evidence",
-        url_rows,
-        "No suspicious URLs were extracted from the message body.",
-    )
-    render_evidence_table(
-        "Attachment evidence",
-        attachment_rows,
-        "No suspicious attachments were present in the parsed metadata.",
-    )
+    st.dataframe(snapshot_df, use_container_width=True, hide_index=True)
 
-    st.subheader("Plain-English explanation")
-    st.markdown(result.get("plain_explanation", ""))
+    _section_header("Evidence Explorer", "Open each tab to review the strongest signals by family.")
+    tab_tech, tab_lang, tab_url, tab_attach = st.tabs(["Technical", "Linguistic", "URLs & Domains", "Attachments"])
 
-    st.subheader("Recommended safe action")
-    st.markdown(result.get("recommended_safe_action", ""))
+    with tab_tech:
+        _evidence_table(
+            "Technical evidence",
+            result.get("technical", {}).get("evidence", []),
+            "No technical authentication or header red flags were detected in this message.",
+        )
+    with tab_lang:
+        _evidence_table(
+            "Linguistic evidence",
+            result.get("linguistic", {}).get("detected_cues", []),
+            "No strong phishing-style language cues were detected.",
+        )
+    with tab_url:
+        _evidence_table(
+            "URL / domain evidence",
+            result.get("urls", {}).get("evidence", []),
+            "No suspicious URLs were extracted from the message body.",
+        )
+    with tab_attach:
+        _evidence_table(
+            "Attachment evidence",
+            result.get("attachments", {}).get("evidence", []),
+            "No suspicious attachments were present in the parsed metadata.",
+        )
+
+    action_col, expl_col = st.columns([1, 1], gap="large")
+    with action_col:
+        st.markdown("### Plain-English explanation")
+        st.markdown(
+            f"<div class='card'><div style='font-size:1.02rem; line-height:1.7;'>{result.get('plain_explanation', '')}</div></div>",
+            unsafe_allow_html=True,
+        )
+    with expl_col:
+        st.markdown("### Recommended safe action")
+        st.markdown(
+            f"<div class='card'><div style='font-size:1.02rem; line-height:1.7;'>{result.get('recommended_safe_action', '')}</div></div>",
+            unsafe_allow_html=True,
+        )
+
+    strongest = result.get("top_signals", [])
+    if strongest:
+        st.markdown("### Strongest Signals")
+        strongest_df = pd.DataFrame(
+            [
+                {
+                    "Family": item.get("category", "signal").title(),
+                    "Signal": item.get("signal") or item.get("issue") or item.get("category") or "Signal",
+                    "Detail": item.get("explanation") or item.get("reason") or item.get("issue") or "",
+                    "Points": item.get("points", 0),
+                }
+                for item in strongest
+            ]
+        )
+        st.dataframe(strongest_df, use_container_width=True, hide_index=True)
 
     with st.expander("Technical summary for SOC / security audience"):
         st.write(result.get("technical_summary", ""))
@@ -213,32 +452,6 @@ if result:
 
     with st.expander("Plain-English summary"):
         st.write(result.get("plain_english_summary", ""))
-
-    with st.expander("Parsed email details"):
-        parsed = result.get("parsed_email", {})
-        fields_df = pd.DataFrame(
-            [
-                {"Field": "From", "Value": parsed.get("from", "")},
-                {"Field": "Reply-To", "Value": parsed.get("reply_to", "")},
-                {"Field": "Return-Path", "Value": parsed.get("return_path", "")},
-                {"Field": "Message-ID", "Value": parsed.get("message_id", "")},
-                {"Field": "Subject", "Value": parsed.get("subject", "")},
-                {"Field": "Received count", "Value": len(parsed.get("received_headers", []) or [])},
-            ]
-        )
-        st.dataframe(fields_df, use_container_width=True, hide_index=True)
-
-    with st.expander("How the explanation was generated"):
-        strongest = result.get("top_signals", [])
-        if strongest:
-            st.markdown(
-                "\n".join(
-                    f"- {item.get('category', 'signal').title()}: {item.get('explanation') or item.get('reason') or item.get('issue')}"
-                    for item in strongest
-                )
-            )
-        else:
-            st.write("No strong signals were available for explanation.")
 
     with st.expander("Shark Tank Pitch View"):
         st.markdown(
@@ -266,19 +479,28 @@ if result:
             """
         )
 
-    with st.expander("Pitch summary"):
-        st.markdown(
-            """
-            - **Problem:** Traditional users miss phishing because language, sender identity, and URL tricks vary by campaign and language.
-            - **Architecture:** Local, explainable, offline triage engine with four signal families and weighted fusion.
-            - **Data:** Synthetic labeled English and Polish emails support course demos without using live attack data.
-            - **Fairness:** Measure language-specific false negatives and avoid bias toward English-only cues.
-            - **Success metrics:** Precision, recall, explanation usefulness, and reduced risky clicks.
-            - **Shipping:** Streamlit demo today; browser extension or SOC queue helper later.
-            - **ROI:** Lower phishing exposure and faster human review.
-            """
+    with st.expander("Parsed email details"):
+        parsed_df = pd.DataFrame(
+            [
+                {"Field": "From", "Value": parsed.get("from", "")},
+                {"Field": "Reply-To", "Value": parsed.get("reply_to", "")},
+                {"Field": "Return-Path", "Value": parsed.get("return_path", "")},
+                {"Field": "Message-ID", "Value": parsed.get("message_id", "")},
+                {"Field": "Subject", "Value": parsed.get("subject", "")},
+                {"Field": "Received count", "Value": len(parsed.get("received_headers", []) or [])},
+            ]
         )
+        st.dataframe(parsed_df, use_container_width=True, hide_index=True)
 else:
     st.markdown("## Results")
     st.info("Load a sample email or paste your own text, then click Analyze Email to generate the hybrid phishing triage report.")
-
+    st.markdown(
+        """
+        <div class='card'>
+            <div class='label'>Preview</div>
+            <div style='font-size:1.02rem; font-weight:700; margin-bottom:0.35rem;'>This becomes a structured email triage report.</div>
+            <div style='color:#5b6b7a;'>When you analyze a message, the app shows a score, verdict, summary cards, and evidence tables instead of a raw debug dump.</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )

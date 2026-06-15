@@ -9,7 +9,7 @@ import streamlit as st
 from src.risk_engine import analyze_email
 
 
-APP_TITLE = "PhishLens: Hybrid AI Phishing Triage Assistant"
+APP_TITLE = "PhishLens: AI-Powered Email Threat Analysis"
 ROOT_DIR = Path(__file__).resolve().parent
 SAMPLES_DIR = ROOT_DIR / "sample_emails"
 SAMPLE_FILES = {
@@ -217,12 +217,11 @@ st.markdown(
     f"""
     <div class="hero">
         <h1>{APP_TITLE}</h1>
-        <p>Paste the full raw email or just the body, and PhishLens will show a clean verdict, the strongest red flags, and a safe next action. Everything runs locally, with no external API calls and no URL visiting.</p>
+        <p>Paste an email to get a clear threat verdict, the strongest red flags, and a safe next action.</p>
         <div class="hero-badges">
-            <span class="hero-badge">No API keys</span>
-            <span class="hero-badge">No URL fetching</span>
-            <span class="hero-badge">English + Polish cues</span>
-            <span class="hero-badge">Explainable hybrid scoring</span>
+            <span class="hero-badge">Fast triage</span>
+            <span class="hero-badge">Clear explanations</span>
+            <span class="hero-badge">Actionable signals</span>
         </div>
     </div>
     """,
@@ -447,37 +446,8 @@ if result:
         st.write(result.get("technical_summary", ""))
         st.caption(result.get("technical", {}).get("summary_note", ""))
 
-    with st.expander("Investor-friendly summary"):
-        st.write(result.get("investor_summary", ""))
-
     with st.expander("Plain-English summary"):
         st.write(result.get("plain_english_summary", ""))
-
-    with st.expander("Shark Tank Pitch View"):
-        st.markdown(
-            """
-            **Problem:**
-            People struggle to detect phishing, especially across languages and institutional contexts.
-
-            **Architecture:**
-            Hybrid rule-based prototype combining linguistic features, email authentication signals, URL analysis, attachment metadata, and explainable risk scoring.
-
-            **Data:**
-            Synthetic labelled emails can be collected in English and Polish, labelled by phishing/legitimate status, tone, language, and suspicious cues.
-
-            **Fairness:**
-            Evaluate performance separately by language, tone, and user group. Avoid English-only phishing bias.
-
-            **Success metrics:**
-            Precision, recall, false negative rate, explanation usefulness, and reduction in unsafe clicks in user testing.
-
-            **Shipping:**
-            Deploy as a web app, browser extension, or SOC triage assistant. Monitor user feedback and false positives.
-
-            **ROI:**
-            Reduce phishing risk, improve security awareness, and support faster email triage.
-            """
-        )
 
     with st.expander("Parsed email details"):
         parsed_df = pd.DataFrame(
